@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements CityDialogFragmen
     public void addCity(City city){
         cityArrayList.add(city);
         cityArrayAdapter.notifyDataSetChanged();
-        DocumentReference docRef = citiesRef.document();
+        DocumentReference docRef = citiesRef.document(city.getName());
         docRef.set(city);
     }
 
