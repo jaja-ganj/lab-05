@@ -2,6 +2,8 @@ package com.example.lab5_starter;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -83,6 +85,50 @@ public class MainActivity extends AppCompatActivity implements CityDialogFragmen
             cityDialogFragment.show(getSupportFragmentManager(),"City Details");
         });
 
+        // Swipe right to delete
+        GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 == null || e2 == null) return false;
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+                if (Math.abs(diffX) > Math.abs(diffY)
+                        && Math.abs(diffX) > SWIPE_THRESHOLD
+                        && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD
+                        && diffX > 0) {
+                    // Right swipe detected — find which item was swiped
+                    int position = cityListView.pointToPosition((int) e1.getX(), (int) e1.getY());
+                    if (position != ListView.INVALID_POSITION) {
+                        City city = cityArrayAdapter.getItem(position);
+                        if (city != null) {
+                            deleteCity(city);
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        cityListView.setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            return false;
+        });
+
+    }
+
+    /**
+     * Deletes a city from the local list and from Firestore.
+     */
+    private void deleteCity(City city) {
+        cityArrayList.remove(city);
+        cityArrayAdapter.notifyDataSetChanged();
+        citiesRef.document(city.getName()).delete()
+                .addOnSuccessListener(aVoid -> Log.d("Firestore", "City deleted: " + city.getName()))
+                .addOnFailureListener(e -> Log.e("Firestore", "Error deleting city", e));
     }
 
     @Override
